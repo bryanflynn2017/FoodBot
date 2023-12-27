@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FoodBot</title>
+    <link rel="icon" href="/static/foodbot_icon_small.png" type="image/png">
+    <style>
+        /* General styling */
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            min-height: 100vh;
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: rgb(249, 245, 242);
+            color: #333;
+        }
+
+        h1 {
+            background-color: #fff;
+            padding: 10px 20px; 
+            border-radius: 10px; 
+            color: rgb(255, 128, 64);
+            box-shadow: 0px 0px 10px rgba(0,0,0,0.1);
+            border: 2px solid rgb(255, 128, 64);
+        }
+
+        /* Styling for input and button */
+        #userInput, button {
+			width: 80%; 
+            max-width: 400px;
+            padding: 10px 15px;
+            border-radius: 5px;
+            border: 1px solid #ddd; 
+            font-size: 16px;
+            margin: 10px 0;
+        }
+
+        button {
+            background-color: rgb(255, 140, 91);
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #ff4757; 
+        }
+
+        /* Styling for the response area */
+        #response {
+			display: flex;
+            align-items: flex-start;
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            width: 80%;
+            max-width: 600px; /* Set maximum width for large screens */
+            background-color: rgb(62, 54, 47);
+            word-wrap: break-word; /* Ensure long text wraps */
+            color: orange; /* Change response text to orange */
+            font-family: 'Roboto Mono'; /* Robotic font */
+            font-weight: bold;
+            font-size: 18px;
+            display: none; /* Initially hide the response box */
+        }
+        
+		.foodbot-icon {
+            position: absolute;
+            top: 46px;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            height: 80px; 
+        }
+        
+        /* Styling for the cart pop-up */
+        #orderPopup {
+            position: fixed; 
+            right: 10px; 
+            top: 50px; 
+            background-color: rgb(227, 226, 245); 
+            padding: 20px; 
+            border-radius: 10px; 
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        /* Styling for the account pop-up */
+        #accountOptions {
+            position: fixed; 
+            right: 0px; 
+            top: 50px; 
+            background-color: rgb(255, 242, 223);
+            padding: 20px; 
+            border-radius: 10px; 
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        /* Styling for account buttons */
+		#accountOptions button {
+			background-color: rgb(232, 113, 83);
+		}
+        
+         /* Styling for each order item */
+        #orderPopup div {
+            margin-bottom: 7px; /* Adds space between items */
+        }
+        
+        #orderPopup h3 {
+			margin-top: 0;
+	        color: rgb(0, 0, 64); 
+	        text-align: center; 
+	        font-weight: normal;
+    	}
+    	
+    	.auth-form {
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 5px;
+            background-color: #fff;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .auth-form input, .auth-form button {
+            margin: 5px 0;
+            padding: 10px;
+            width: calc(100% - 22px); 
+            box-sizing: border-box; 
+        }
+
+        .auth-form button {
+            background-color: rgb(255, 140, 91);
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        .auth-form button:hover {
+            background-color: #ff4757;
+        }
+        
+    </style>
+</head>
+<body onload="displayInitialGreeting()">
+	<p/></p>
+	<img src="/static/foodbot_icon.png" alt="FoodBot Icon" class="foodbot-icon">
+    <!-- Container for cart and account buttons -->
+    <div style="position: absolute; top: 10px; right: 30px; display: flex; align-items: center;">
+        <!-- Cart Button -->
+        <img src="/static/cart.png" alt="Cart" onclick="showOrder()" style="cursor: pointer; width: 50px; height: 50px;">
+
+        <!-- Account Button -->
+        <button id="accountButton" onclick="showAccountOptions()" style="margin-left: 10px;">Account</button>
+    </div>
+
+    <!-- Account Options (hidden by default) -->
+    <div id="accountOptions" style="display: none; position: fixed; right: 10px; top: 50px; border: 1px solid #ddd; padding: 20px; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.2);">
+        <!-- These will be populated based on login status -->
+    </div>
+    <!-- Pop-up Menu for Current Order (Initially hidden) -->
+    <div id="orderPopup" style="display:none; position: fixed; right: 70px; top: 60px; border: 1px solid #ddd; padding: 20px; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.2);">
+	    <h3>Current Order</h3>
+	    <div id="orderContent">
+	        <!-- Order details will be populated here -->
+	    </div>
+	</div>
+    <p/></p>
+    <h1>Welcome to FoodBot!</h1>
+    
+    <input type="text" id="userInput" placeholder="Type your question or order here..." />
+    <button onclick="sendQuery()">Ask FoodBot</button>
+
+    <div id="response"></div>
+
+    <script>
+		function displayInitialGreeting() {
+            let responseDiv = document.getElementById('response');
+            let greeting = 'Hello! Welcome to FoodBot. Type "help" for assistance or ask me a question directly.';
+            responseDiv.innerHTML = greeting;
+            responseDiv.style.display = 'flex'; // Show the greeting
+        }
+        
+        function sendQuery() {
+		    let inputElement = document.getElementById('userInput');
+		    let input = inputElement.value;
+		
+		    fetch('/query', {
+		        method: 'POST',
+		        headers: {
+		            'Content-Type': 'application/json'
+		        },
+		        body: JSON.stringify({ query: input })
+		    })
+		    .then(response => response.json())
+		    .then(data => {
+		        let responseDiv = document.getElementById('response');
+		        responseDiv.innerHTML = ''; // Clear previous content
+		
+		        // Create and append the icon
+		        let icon = document.createElement('img');
+		        icon.src = '/static/foodbot_icon_small.png';
+		        icon.alt = 'FoodBot Icon';
+		        icon.style.height = '32px'; // Adjust the size if needed
+		        icon.style.marginRight = '15px'; // Add some space between the icon and text
+		
+		        // Make the response box visible
+		        responseDiv.style.display = 'flex';
+		
+		        // Create a span for the typing effect
+		        let textSpan = document.createElement('span');
+		        responseDiv.appendChild(icon);
+		        responseDiv.appendChild(textSpan);
+		
+		        // Typing effect
+		        let plainText = data.answer.replace(/<br>/g, '\n'); // Replace <br> with \n for typing effect
+		        let index = 0;
+		        function typeWriter() {
+		            if (index < plainText.length) {
+		                textSpan.textContent += plainText.charAt(index);
+		                index++;
+		                setTimeout(typeWriter, 12); // Adjust typing speed as needed, lower is faster
+		            } else {
+		                // After typing effect, set the full HTML content
+		                responseDiv.innerHTML = icon.outerHTML + data.answer;
+		            }
+		        }
+		        typeWriter();
+		
+		        // Clear the input field
+		        inputElement.value = '';
+		    });
+		}
+
+		function showOrder() {
+		    fetch('/get_order_with_prices')
+		        .then(response => response.json())
+		        .then(data => {
+		            console.log("Order Data:", data); 
+		            let orderContent = document.getElementById('orderContent');
+		            orderContent.innerHTML = '';
+		
+		            let totalPrice = 0;  // Initialize total price
+		
+		            if (data && data.length > 0) {
+		                data.forEach(order => {
+		                    if (order.item_name && order.price) {
+		                        let capitalizedItemName = capitalizeFirstLetter(order.item_name);
+		                        let orderItem = document.createElement('div');
+		                        orderItem.innerHTML = `● <strong>(x${order.quantity}) </strong>${capitalizedItemName} - $${order.price.toFixed(2)}`;
+		                        orderContent.appendChild(orderItem);
+		
+		                        totalPrice += order.price;  // Add item price to total
+		                    }
+		                });
+		
+		                // Create and append total price div
+		                let totalDiv = document.createElement('div');
+		                totalDiv.innerHTML = `--------------------<br><strong>[ Total: $${totalPrice.toFixed(2)} ]</strong>`;
+		                totalDiv.style.marginTop = '10px';
+		                totalDiv.style.marginLeft = '2px';
+		                totalDiv.style.fontSize = '20px';
+		                orderContent.appendChild(totalDiv);
+		
+		            } else {
+		                orderContent.innerHTML = 'Your cart is empty';
+		            }
+		
+		            document.getElementById('orderPopup').style.display = 'block';
+		        })
+		        .catch(error => {
+		            console.error('Error fetching order:', error);
+		        });
+		}
+
+		// Utility function to capitalize the first letter
+		function capitalizeFirstLetter(string) {
+		    return string.charAt(0).toUpperCase() + string.slice(1);
+		}
+		
+		function showAccountOptions() {
+		    fetch('/get_login_status')
+		        .then(response => response.json())
+		        .then(data => {
+		            let accountOptions = document.getElementById('accountOptions');
+		            accountOptions.innerHTML = ''; // Clear existing content
+		            if (data.logged_in) {
+		                accountOptions.innerHTML = `Logged in as ${data.username} <button onclick="logout()">Logout</button>`;
+		            } else {
+		                accountOptions.innerHTML = `
+		                    <button onclick="showLoginForm()">Login</button>
+		                    <button onclick="showRegisterForm()">Register</button>
+		                `;
+		            }
+		            accountOptions.style.display = 'block';
+		        })
+		        .catch(error => console.error('Error:', error));
+		}
+
+		function showLoginForm() {
+		    window.location.href = '/login'; // Redirect to login page
+		}
+		
+		function showRegisterForm() {
+		    window.location.href = '/register'; // Redirect to register page
+		}
+	    
+	    function logout() {
+        fetch('/logout', { method: 'POST' })
+            .then(() => {
+                window.location.reload(); // Refresh after logout
+            });
+    	}
+
+        // Functionality to close the pop-up when clicking outside of it
+        window.onclick = function(event) {
+		    let accountOptions = document.getElementById('accountOptions');
+		    let accountButton = document.getElementById('accountButton');
+		    let orderPopup = document.getElementById('orderPopup');
+		
+		    // Hide account options if click occurred outside the accountOptions div and outside the accountButton
+		    if (event.target !== accountOptions && event.target !== accountButton && !accountOptions.contains(event.target)) {
+		        accountOptions.style.display = 'none';
+		    }
+		
+		    // Hide orderPopup if click occurred outside the orderPopup div
+		    if (event.target !== orderPopup && !orderPopup.contains(event.target)) {
+		        orderPopup.style.display = 'none';
+		    }
+		};
+        
+        document.getElementById('userInput').addEventListener('keypress', function(event) {
+            if (event.keyCode === 13) {  // 13 is the key code for Enter
+                sendQuery();
+        	}
+        });
+        
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+	        e.preventDefault();
+	        let formData = new FormData(this);
+	        fetch('/login', {
+	            method: 'POST',
+	            body: formData
+	        })
+	        .then(response => response.json())
+	        .then(data => {
+	            alert(data.message);  // Show the message as a pop-up
+	            window.location.reload();  // Refresh the page
+	        })
+	        .catch(error => console.error('Error:', error));
+	    });
+
+    </script>
+</body>
+</html>

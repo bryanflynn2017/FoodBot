@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Register - FoodBot</title>
+	<link rel="stylesheet" href="/static/styles.css">
+</head>
+
+<body>
+	<div class="auth-form-container">
+		<h2>Register</h2>
+		<form id="registerForm">
+			<input type="text" name="username" placeholder="Username" required>
+			<input type="password" name="password" placeholder="Password" required>
+			<button type="submit">Register</button>
+		</form>
+		<p>Already have an account? <a href="/login">Login here</a></p>
+	</div>
+
+	<!-- Modal -->
+	<div id="modal" class="modal">
+		<div class="modal-content">
+			<span class="close">&times;</span>
+			<p id="modal-message"></p>
+		</div>
+	</div>
+
+	<script>
+		document.getElementById('registerForm').addEventListener('submit', function (e) {
+			e.preventDefault(); // Prevent the default form submission
+			let formData = new FormData(this); // Create a FormData object from the form
+
+			fetch('/perform_registration', {
+				method: 'POST',
+				body: formData
+			})
+				.then(response => response.json())
+				.then(data => {
+					alert(data.message); // Show the response message
+					if (data.status === 'success') {
+						window.location.href = '/'; // Redirect to the homepage
+					}
+				})
+				.catch(error => {
+					console.error('Error:', error);
+					alert('An error occurred. Please try again.');
+				});
+		});
+
+		function showModal(message) {
+			var modal = document.getElementById("modal");
+			var span = document.getElementsByClassName("close")[0];
+			var modalMessage = document.getElementById("modal-message");
+
+			modalMessage.innerHTML = message;
+			modal.style.display = "block";
+
+			span.onclick = function () {
+				modal.style.display = "none";
+			}
+
+			window.onclick = function (event) {
+				if (event.target == modal) {
+					modal.style.display = "none";
+				}
+			}
+		}
+
+	</script>
+
+	<style>
+		.modal {
+			display: none;
+			position: fixed;
+			z-index: 1;
+			left: 0;
+			top: 0;
+			width: 100%;
+			height: 100%;
+			overflow: auto;
+			background-color: rgb(0, 0, 0);
+			background-color: rgba(0, 0, 0, 0.4);
+		}
+
+		.modal-content {
+			background-color: #fefefe;
+			margin: 15% auto;
+			padding: 20px;
+			border: 1px solid #888;
+			width: 80%;
+		}
+
+		.close {
+			color: #aaa;
+			float: right;
+			font-size: 28px;
+			font-weight: bold;
+		}
+
+		.close:hover,
+		.close:focus {
+			color: black;
+			text-decoration: none;
+			cursor: pointer;
+		}
+	</style>
+</body>
+
+</html>
